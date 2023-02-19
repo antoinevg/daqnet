@@ -5,7 +5,7 @@ Copyright 2018-2019 Adam Greig
 Released under the MIT license; see LICENSE for details.
 """
 
-from nmigen import Elaboratable, Module, Signal, Memory
+from amaranth import Elaboratable, Module, Signal, Memory
 
 
 class CRC32(Elaboratable):
@@ -42,7 +42,7 @@ class CRC32(Elaboratable):
         m = Module()
         crc = Signal(32)
 
-        self.crctable = Memory(32, 256, make_crc32_table())
+        self.crctable = Memory(width=32, depth=256, init=make_crc32_table())
         table_port = self.crctable.read_port()
         m.submodules += table_port
 
@@ -89,7 +89,7 @@ def make_crc32_table():
 
 
 def test_crc32():
-    from nmigen.back import pysim
+    from amaranth.back import pysim
     crc = CRC32()
 
     def testbench():
@@ -114,7 +114,7 @@ def test_crc32():
 
 
 def test_crc32_match():
-    from nmigen.back import pysim
+    from amaranth.back import pysim
     crc = CRC32()
 
     frame = [

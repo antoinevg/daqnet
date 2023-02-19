@@ -5,7 +5,7 @@ Copyright 2018-2019 Adam Greig
 Released under the MIT license; see LICENSE for details.
 """
 
-from nmigen import Elaboratable, Module, Signal, Cat
+from amaranth import Elaboratable, Module, Signal, Cat
 from .crc import CRC32
 from .mac_address_match import MACAddressMatch
 
@@ -41,7 +41,7 @@ class RMIIRx(Elaboratable):
     def __init__(self, mac_addr, write_port, crs_dv, rxd0, rxd1):
         # Outputs
         self.rx_valid = Signal()
-        self.rx_offset = Signal(write_port.addr.nbits)
+        self.rx_offset = Signal(write_port.addr.width)
         self.rx_len = Signal(11)
 
         # Store arguments
@@ -60,7 +60,7 @@ class RMIIRx(Elaboratable):
         m.submodules.rxbyte = rxbyte = RMIIRxByte(
             self.crs_dv, self.rxd0, self.rxd1)
 
-        adr = Signal(self.write_port.addr.nbits)
+        adr = Signal(self.write_port.addr.width)
 
         with m.FSM() as fsm:
             m.d.comb += [
@@ -243,7 +243,7 @@ class RMIITx(Elaboratable):
     def __init__(self, read_port, txen, txd0, txd1):
         # Inputs
         self.tx_start = Signal()
-        self.tx_offset = Signal(read_port.addr.nbits)
+        self.tx_offset = Signal(read_port.addr.width)
         self.tx_len = Signal(11)
 
         # Outputs
@@ -258,11 +258,11 @@ class RMIITx(Elaboratable):
         m = Module()
 
         # Transmit byte counter
-        tx_idx = Signal(self.read_port.addr.nbits)
+        tx_idx = Signal(self.read_port.addr.width)
         # Transmit length latch
         tx_len = Signal(11)
         # Transmit offset latch
-        tx_offset = Signal(self.read_port.addr.nbits)
+        tx_offset = Signal(self.read_port.addr.width)
 
         m.submodules.crc = crc = CRC32()
         m.submodules.txbyte = txbyte = RMIITxByte(
@@ -445,14 +445,14 @@ class RMIITxByte(Elaboratable):
 
 def test_rmii_rx():
     import random
-    from nmigen.back import pysim
-    from nmigen import Memory
+    from amaranth.back import pysim
+    from amaranth import Memory
 
     crs_dv = Signal()
     rxd0 = Signal()
     rxd1 = Signal()
 
-    mem = Memory(8, 128)
+    mem = Memory(width=8, depth=128)
     mem_port = mem.write_port()
     mac_addr = [random.randint(0, 255) for _ in range(6)]
 
@@ -541,7 +541,7 @@ def test_rmii_rx():
 
 def test_rmii_rx_byte():
     import random
-    from nmigen.back import pysim
+    from amaranth.back import pysim
 
     crs_dv = Signal()
     rxd0 = Signal()
@@ -610,8 +610,8 @@ def test_rmii_rx_byte():
 
 
 def test_rmii_tx():
-    from nmigen.back import pysim
-    from nmigen import Memory
+    from amaranth.back import pysim
+    from amaranth import Memory
 
     txen = Signal()
     txd0 = Signal()
@@ -644,7 +644,7 @@ def test_rmii_tx():
     txbytes_zp = txbytes + [0xFF]*(128 - len(txbytes))
     txoffset = 120
     txbytes_mem = txbytes_zp[-txoffset:] + txbytes_zp[:-txoffset]
-    mem = Memory(8, 128, txbytes_mem)
+    mem = Memory(width=8, depth=128, init=txbytes_mem)
     mem_port = mem.read_port()
 
     rmii_tx = RMIITx(mem_port, txen, txd0, txd1)
@@ -685,7 +685,7 @@ def test_rmii_tx():
 
 def test_rmii_tx_byte():
     import random
-    from nmigen.back import pysim
+    from amaranth.back import pysim
 
     txen = Signal()
     txd0 = Signal()

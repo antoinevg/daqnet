@@ -8,7 +8,7 @@ Released under the MIT license; see LICENSE for details.
 import operator
 from functools import reduce
 
-from nmigen import Elaboratable, Module, Signal
+from amaranth import Elaboratable, Module, Signal
 
 
 class MACAddressMatch(Elaboratable):
@@ -73,7 +73,7 @@ class MACAddressMatch(Elaboratable):
 
 def test_mac_address_match():
     import random
-    from nmigen.back import pysim
+    from amaranth.back import pysim
 
     mac_address = [random.randint(0, 255) for _ in range(6)]
     mac_address = [0x01, 0x23, 0x45, 0x67, 0x89, 0xAB]

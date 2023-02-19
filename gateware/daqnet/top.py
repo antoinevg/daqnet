@@ -3,7 +3,7 @@ Copyright 2018-2019 Adam Greig
 Released under the MIT license; see LICENSE for details.
 """
 
-from nmigen import Elaboratable, Signal, Module, ClockDomain
+from amaranth import Elaboratable, Signal, Module, ClockDomain
 from .platform import SB_PLL40_PAD
 
 from .ethernet.mac import MAC
@@ -12,13 +12,13 @@ from .user import User
 
 
 class LEDBlinker(Elaboratable):
-    def __init__(self, nbits):
+    def __init__(self, width):
         self.led = Signal()
-        self.nbits = nbits
+        self.width = width
 
     def elaborate(self, platform):
         m = Module()
-        divider = Signal(self.nbits)
+        divider = Signal(self.width)
         m.d.sync += divider.eq(divider + 1)
         m.d.comb += self.led.eq(divider[-1])
         return m

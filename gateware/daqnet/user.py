@@ -1,11 +1,11 @@
-from nmigen import Elaboratable, Module, Signal, Memory
+from amaranth import Elaboratable, Module, Signal, Memory
 
 
 class User(Elaboratable):
     def __init__(self):
-        self.user_rx_mem = Memory(8, 32)
-        self.user_tx_mem = Memory(8, 32,
-                                  [ord(x) for x in "Hello, World!!\r\n"])
+        self.user_rx_mem = Memory(width=8, depth=32)
+        self.user_tx_mem = Memory(width=8, depth=32,
+                                  init=[ord(x) for x in "Hello, World!!\r\n"])
         self.mem_r_port = self.user_tx_mem.read_port()
         self.mem_w_port = self.user_rx_mem.write_port()
         self.packet_received = Signal()

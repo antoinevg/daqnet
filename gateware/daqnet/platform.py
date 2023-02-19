@@ -7,9 +7,9 @@ Copyright 2019 Adam Greig
 Released under the MIT license; see LICENSE for details.
 """
 
-from nmigen import Fragment, Elaboratable, Signal, Instance, Const, Module
-from nmigen.vendor.lattice_ice40 import LatticeICE40Platform
-from nmigen.build import Resource, Pins, Clock, Subsignal
+from amaranth import Fragment, Elaboratable, Signal, Instance, Const, Module
+from amaranth.vendor.lattice_ice40 import LatticeICE40Platform
+from amaranth.build import Resource, Pins, Clock, Subsignal
 
 
 class _InstanceWrapper(Elaboratable):

@@ -8,7 +8,7 @@ Released under the MIT license; see LICENSE for details.
 import operator
 import functools
 from contextlib import contextmanager
-from nmigen import Elaboratable, Module, Signal, Memory, Const
+from amaranth import Elaboratable, Module, Signal, Memory, Const
 
 
 class IPStack(Elaboratable):
@@ -54,14 +54,14 @@ class IPStack(Elaboratable):
         # RX port
         self.rx_port = rx_port
         self.rx_len = Signal(11)
-        self.rx_offset = Signal(rx_port.addr.nbits)
+        self.rx_offset = Signal(rx_port.addr.width)
         self.rx_valid = Signal()
         self.rx_ack = Signal()
 
         # TX port
         self.tx_port = tx_port
         self.tx_len = Signal(11)
-        self.tx_offset = Signal(tx_port.addr.nbits)
+        self.tx_offset = Signal(tx_port.addr.width)
         self.tx_start = Signal()
 
         # User port
@@ -95,7 +95,7 @@ class IPStack(Elaboratable):
         m.submodules.udp_tx = udp_tx = _UDPTxLayer(self)
 
         # Register for RX packet memory read address, controlled by this module
-        self.rx_addr = Signal(self.rx_port.addr.nbits)
+        self.rx_addr = Signal(self.rx_port.addr.width)
 
         m.d.comb += [
             self.rx_port.addr.eq(self.rx_addr),
@@ -200,7 +200,7 @@ class _StackLayer(Elaboratable):
         self.send = Signal()
         self.rx_data = Signal(8)
         self.tx_en = Signal()
-        self.tx_addr = Signal(ip_stack.tx_port.addr.nbits)
+        self.tx_addr = Signal(ip_stack.tx_port.addr.width)
         self.tx_data = Signal(8)
         self.tx_len = Signal(11)
 
@@ -256,7 +256,7 @@ class _StackLayer(Elaboratable):
         """
         if isinstance(n, int):
             n = Const(n)
-        ctr = Signal(shape=n.nbits)
+        ctr = Signal(shape=n.width)
         with self.m.State(self._fsm_ctr):
             self._fsm_ctr += 1
             self.m.d.sync += [
@@ -317,7 +317,7 @@ class _StackLayer(Elaboratable):
         """
         if isinstance(n, int):
             n = Const(n)
-        ctr = Signal(shape=n.nbits)
+        ctr = Signal(shape=n.width)
         self.m.d.sync += [
             write_port.data.eq(self.rx_data),
             write_port.addr.eq(dst + ctr),
@@ -404,7 +404,7 @@ class _StackLayer(Elaboratable):
         """
         if isinstance(n, int):
             n = Const(n)
-        ctr = Signal(shape=n.nbits)
+        ctr = Signal(shape=n.width)
         self.m.d.comb += [
             read_port.addr.eq(src + ctr),
         ]
@@ -877,7 +877,7 @@ class _InternetChecksum(Elaboratable):
 
 
 def test_ipv4_checksum():
-    from nmigen.back import pysim
+    from amaranth.back import pysim
 
     checksum = _InternetChecksum()
 
@@ -926,12 +926,12 @@ def compare_packet(tx_bytes, expected_bytes):
 
 
 def run_rx_test(name, rx_bytes, expected_bytes, mac_addr, ip4_addr):
-    from nmigen.back import pysim
+    from amaranth.back import pysim
 
     mem_n = 64
-    rx_mem = Memory(8, mem_n, [0]*4 + rx_bytes)
+    rx_mem = Memory(width=8, depth=mem_n, init=[0]*4 + rx_bytes)
     rx_mem_port = rx_mem.read_port()
-    tx_mem = Memory(8, mem_n)
+    tx_mem = Memory(width=8, depth=mem_n)
     tx_mem_port = tx_mem.write_port()
 
     ipstack = IPStack(mac_addr, ip4_addr, 0, 0, rx_mem_port, tx_mem_port,
@@ -1137,7 +1137,7 @@ def test_rx_icmp():
 
 
 def test_udp_tx():
-    from nmigen.back import pysim
+    from amaranth.back import pysim
 
     mac_addr = "01:23:45:67:89:AB"
     ip4_addr = "10.0.0.5"
@@ -1192,11 +1192,11 @@ def test_udp_tx():
     expected_bytes += udp_payload
 
     mem_n = 64
-    rx_mem = Memory(8, 64)
+    rx_mem = Memory(width=8, depth=64)
     rx_mem_port = rx_mem.read_port()
-    tx_mem = Memory(8, mem_n)
+    tx_mem = Memory(width=8, depth=mem_n)
     tx_mem_port = tx_mem.write_port()
-    user_tx_mem = Memory(8, 64, udp_payload)
+    user_tx_mem = Memory(width=8, depth=64, init=udp_payload)
     user_tx_mem_port = user_tx_mem.read_port()
 
     dst_mac_addr_parts = [int(x, 16) for x in dst_mac_addr.split(":")]
@@ -1256,7 +1256,7 @@ def test_udp_tx():
 
 
 def test_udp_rx():
-    from nmigen.back import pysim
+    from amaranth.back import pysim
 
     mac_addr = "01:23:45:67:89:AB"
     ip4_addr = "10.0.0.5"
@@ -1311,11 +1311,11 @@ def test_udp_rx():
     rx_bytes += udp_payload
 
     mem_n = 64
-    rx_mem = Memory(8, 64, rx_bytes)
+    rx_mem = Memory(width=8, depth=64, init=rx_bytes)
     rx_mem_port = rx_mem.read_port()
-    tx_mem = Memory(8, mem_n)
+    tx_mem = Memory(width=8, depth=mem_n)
     tx_mem_port = tx_mem.write_port()
-    user_rx_mem = Memory(8, 64)
+    user_rx_mem = Memory(width=8, depth=64)
     user_rx_mem_port = user_rx_mem.write_port()
 
     src_mac_addr_parts = [int(x, 16) for x in src_mac_addr.split(":")]

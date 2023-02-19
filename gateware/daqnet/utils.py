@@ -5,7 +5,7 @@ Copyright 2018-2019 Adam Greig
 Released under the MIT license; see LICENSE for details.
 """
 
-from nmigen import Module, Signal, Cat, Elaboratable
+from amaranth import Module, Signal, Cat, Elaboratable
 
 
 class LFSR(Elaboratable):
@@ -46,7 +46,7 @@ class PulseStretch(Elaboratable):
     def elaborate(self, platform):
         m = Module()
 
-        counter = Signal(max=self.nclks)
+        counter = Signal(range(self.nclks))
 
         with m.FSM() as fsm:
             m.d.comb += self.pulse.eq(fsm.ongoing("STRETCH"))
@@ -93,7 +93,7 @@ class PipelinedAdder(Elaboratable):
 
 
 def test_pipelined_adder():
-    from nmigen.back import pysim
+    from amaranth.back import pysim
     import random
 
     n = 64

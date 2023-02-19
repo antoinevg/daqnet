@@ -5,7 +5,7 @@ Copyright 2018-2019 Adam Greig
 Released under the MIT license; see LICENSE for details.
 """
 
-from nmigen import Elaboratable, Module, Signal, Array
+from amaranth import Elaboratable, Module, Signal, Array
 
 
 class MDIO(Elaboratable):
@@ -59,7 +59,7 @@ class MDIO(Elaboratable):
         mdc_int = Signal()
         mdc_rise = Signal()
         mdc_fall = Signal()
-        mdc_divider = Signal(max=self.clk_div)
+        mdc_divider = Signal(range(self.clk_div))
         with m.If(mdc_divider == 0):
             m.d.sync += [
                 mdc_divider.eq(self.clk_div - 1),
@@ -296,8 +296,8 @@ class MDIO(Elaboratable):
 
 def test_mdio_read():
     import random
-    from nmigen.lib.io import Pin
-    from nmigen.back import pysim
+    from amaranth.lib.io import Pin
+    from amaranth.back import pysim
 
     mdc = Signal()
     mdio_pin = Pin(1, 'io')
@@ -379,8 +379,8 @@ def test_mdio_read():
 
 def test_mdio_write():
     import random
-    from nmigen.lib.io import Pin
-    from nmigen.back import pysim
+    from amaranth.lib.io import Pin
+    from amaranth.back import pysim
 
     mdc = Signal()
     mdio_pin = Pin(1, 'io')

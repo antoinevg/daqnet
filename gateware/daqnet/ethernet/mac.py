@@ -5,10 +5,10 @@ Copyright 2018-2019 Adam Greig
 Released under the MIT license; see LICENSE for details.
 """
 
-from nmigen import Elaboratable, Module, Signal, Const, Memory, ClockDomain
-from nmigen import Cat
-from nmigen.lib.fifo import AsyncFIFO
-from nmigen.hdl.xfrm import DomainRenamer
+from amaranth import Elaboratable, Module, Signal, Const, Memory, ClockDomain
+from amaranth import Cat
+from amaranth.lib.fifo import AsyncFIFO
+from amaranth.hdl.xfrm import DomainRenamer
 from .mdio import MDIO
 from .rmii import RMIIRx, RMIITx
 from ..utils import PulseStretch
@@ -67,13 +67,13 @@ class MAC(Elaboratable):
         # TX port
         self.tx_start = Signal()
         self.tx_len = Signal(11)
-        self.tx_offset = Signal(max=tx_buf_size-1)
+        self.tx_offset = Signal(range(tx_buf_size-1))
 
         # RX port
         self.rx_ack = Signal()
         self.rx_valid = Signal()
         self.rx_len = Signal(11)
-        self.rx_offset = Signal(max=rx_buf_size-1)
+        self.rx_offset = Signal(range(rx_buf_size-1))
 
         # Inputs
         self.phy_reset = Signal()
@@ -90,9 +90,9 @@ class MAC(Elaboratable):
         self.eth_led = eth_led
 
         # Create packet memories and interface ports
-        self.tx_mem = Memory(8, tx_buf_size)
+        self.tx_mem = Memory(width=8, depth=tx_buf_size)
         self.tx_port = self.tx_mem.write_port()
-        self.rx_mem = Memory(8, rx_buf_size)
+        self.rx_mem = Memory(width=8, depth=rx_buf_size)
         self.rx_port = self.rx_mem.read_port(transparent=False)
 
     def elaborate(self, platform):
@@ -122,23 +122,23 @@ class MAC(Elaboratable):
             tx_port_r, self.rmii.txen, self.rmii.txd0, self.rmii.txd1)
 
         # Create FIFOs to interface to RMII modules
-        rx_fifo = AsyncFIFO(width=11+self.rx_port.addr.nbits, depth=4)
-        tx_fifo = AsyncFIFO(width=11+self.tx_port.addr.nbits, depth=4)
+        rx_fifo = AsyncFIFO(width=11+self.rx_port.addr.width, depth=4)
+        tx_fifo = AsyncFIFO(width=11+self.tx_port.addr.width, depth=4)
 
         m.d.comb += [
             # RX FIFO
-            rx_fifo.din.eq(Cat(rmii_rx.rx_offset, rmii_rx.rx_len)),
-            rx_fifo.we.eq(rmii_rx.rx_valid),
-            Cat(self.rx_offset, self.rx_len).eq(rx_fifo.dout),
-            rx_fifo.re.eq(self.rx_ack),
-            self.rx_valid.eq(rx_fifo.readable),
+            rx_fifo.w_data.eq(Cat(rmii_rx.rx_offset, rmii_rx.rx_len)),
+            rx_fifo.w_en.eq(rmii_rx.rx_valid),
+            Cat(self.rx_offset, self.rx_len).eq(rx_fifo.r_data),
+            rx_fifo.r_en.eq(self.rx_ack),
+            self.rx_valid.eq(rx_fifo.r_rdy),
 
             # TX FIFO
-            tx_fifo.din.eq(Cat(self.tx_offset, self.tx_len)),
-            tx_fifo.we.eq(self.tx_start),
-            Cat(rmii_tx.tx_offset, rmii_tx.tx_len).eq(tx_fifo.dout),
-            tx_fifo.re.eq(rmii_tx.tx_ready),
-            rmii_tx.tx_start.eq(tx_fifo.readable),
+            tx_fifo.w_data.eq(Cat(self.tx_offset, self.tx_len)),
+            tx_fifo.w_en.eq(self.tx_start),
+            Cat(rmii_tx.tx_offset, rmii_tx.tx_len).eq(tx_fifo.r_data),
+            tx_fifo.r_en.eq(rmii_tx.tx_ready),
+            rmii_tx.tx_start.eq(tx_fifo.r_rdy),
 
             # Other submodules
             phy_manager.phy_reset.eq(self.phy_reset),
@@ -227,7 +227,7 @@ class PHYManager(Elaboratable):
 
         # Controller FSM
         one_ms = int(self.clk_freq//1000)
-        counter = Signal(max=one_ms)
+        counter = Signal(range(one_ms))
         with m.FSM():
 
             # Assert PHY_RST and begin 1ms counter
@@ -344,8 +344,8 @@ class PHYManager(Elaboratable):
 
 
 def test_phy_manager():
-    from nmigen.back import pysim
-    from nmigen.lib.io import Pin
+    from amaranth.back import pysim
+    from amaranth.lib.io import Pin
 
     mdc = Signal()
     mdio = Pin(1, 'io')
