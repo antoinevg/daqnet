@@ -202,7 +202,10 @@ class PHYManager(Elaboratable):
         clk_div = int(self.clk_freq // 2.5e6)
         m.submodules.mdio = mdio = MDIO(clk_div, self.mdio, self.mdc)
         self.mdio_mod = mdio
-        mdio.phy_addr = Const(self.phy_addr)
+
+        # value gets mangled if we try assign it as a Const
+        #mdio.phy_addr = Const(self.phy_addr)
+        m.d.comb += mdio.phy_addr.eq(self.phy_addr)
 
         # Latches for registers we read
         bsr = Signal(16)
